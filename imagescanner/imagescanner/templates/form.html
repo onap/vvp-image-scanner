@@ -1,0 +1,94 @@
+<!--
+/* ============LICENSE_START=======================================================
+ * org.onap.vvp/image-scanner
+ * ===================================================================
+ * Copyright © 2017 AT&T Intellectual Property. All rights reserved.
+ * ===================================================================
+ *
+ * Unless otherwise specified, all software contained herein is licensed
+ * under the Apache License, Version 2.0 (the “License”);
+ * you may not use this software except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *             http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *
+ *
+ * Unless otherwise specified, all documentation contained herein is licensed
+ * under the Creative Commons License, Attribution 4.0 Intl. (the “License”);
+ * you may not use this documentation except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *             https://creativecommons.org/licenses/by/4.0/
+ *
+ * Unless required by applicable law or agreed to in writing, documentation
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * ============LICENSE_END============================================
+ *
+ * ECOMP is a trademark and service mark of AT&T Intellectual Property.
+ */
+-->
+<!doctype html>
+<html>
+  <head>
+    <style type="text/css">
+      input { width: 30em; }
+    </style>
+  </head>
+  <body>
+    <form method="POST">
+      <p>
+        <input name="repo"> <label for="repo">Git Repo URL</label><br/>
+        <input name="path"> <label for="path">Path to image</label><br/>
+        <input name="notify" value="{{channel}}"> <label for="path">Slack users/channels to notify</label><br/>
+        <input type="submit" value="Submit"></p>
+    </form>
+    <h3>Executing:</h3>
+    <pre>
+    {% for job in active -%}
+{{ job.args }}
+    {% else -%}
+(None)
+    {% endfor -%}
+    </pre>
+    <h3>Status:</h3>
+    <pre>{{status}}</pre>
+    <h3>Pending:</h3>
+    <pre>
+    {% for job in reserved -%}
+{{ job.args }}
+    {% else -%}
+(None)
+    {% endfor -%}
+    </pre>
+    <script language="javascript">
+      for (const k of document.getElementsByTagName("input")) {
+        if (k.name == "") { continue; }
+        r = new RegExp("(?:(?:^|.*;\\s*)"+k.name+"\\s*\\=\\s*([^;]*).*$)|^.*$");
+        let v = document.cookie.replace(r, "$1");
+        if (v == "") { continue; }
+        k.value = decodeURIComponent(v);
+      }
+      document.forms[0].onsubmit = function(){
+        for (const k of this.getElementsByTagName("input")) {
+          if (k.name == "") { continue; }
+          document.cookie = (encodeURIComponent(k.name)
+          + "=" + encodeURIComponent(k.value)
+          + ";path=/imagescanner"
+          + ";expires=Tue, 19 Jan 2038 03:14:07 GMT");
+        }
+        return true;
+      }
+    </script>
+  </body>
+</html>

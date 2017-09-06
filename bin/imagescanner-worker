@@ -1,0 +1,55 @@
+#!/bin/sh
+# ============LICENSE_START=======================================================
+# org.onap.vvp/image-scanner
+# ===================================================================
+# Copyright © 2017 AT&T Intellectual Property. All rights reserved.
+# ===================================================================
+#
+# Unless otherwise specified, all software contained herein is licensed
+# under the Apache License, Version 2.0 (the “License”);
+# you may not use this software except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#             http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+#
+# Unless otherwise specified, all documentation contained herein is licensed
+# under the Creative Commons License, Attribution 4.0 Intl. (the “License”);
+# you may not use this documentation except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#             https://creativecommons.org/licenses/by/4.0/
+#
+# Unless required by applicable law or agreed to in writing, documentation
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ============LICENSE_END============================================
+#
+# ECOMP is a trademark and service mark of AT&T Intellectual Property.
+#
+set -e
+
+# Verify host has loaded required modules
+for module in nbd isofs; do
+	lsmod | grep $module >/dev/null || echo "WARNING: $module kernel module not loaded."
+done
+
+# Run the update daemon in the background, if needed
+if ! [ -e "/run/clamav/freshclam.pid" ]; then
+	echo >&2 "Launching ClamAV virus database update daemon..."
+	freshclam -d -c 6
+fi
+
+# Run a celery worker for the scans queue. Limit concurrency to 1.
+echo >&2 "Launching imagescanner worker..."
+exec celery -A imagescanner.tasks.celery_app worker -c 1 -Q scans -n scanworker@%h

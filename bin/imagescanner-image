@@ -1,0 +1,157 @@
+#!/bin/sh
+# ============LICENSE_START=======================================================
+# org.onap.vvp/image-scanner
+# ===================================================================
+# Copyright © 2017 AT&T Intellectual Property. All rights reserved.
+# ===================================================================
+#
+# Unless otherwise specified, all software contained herein is licensed
+# under the Apache License, Version 2.0 (the “License”);
+# you may not use this software except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#             http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+#
+# Unless otherwise specified, all documentation contained herein is licensed
+# under the Creative Commons License, Attribution 4.0 Intl. (the “License”);
+# you may not use this documentation except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#             https://creativecommons.org/licenses/by/4.0/
+#
+# Unless required by applicable law or agreed to in writing, documentation
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ============LICENSE_END============================================
+#
+# ECOMP is a trademark and service mark of AT&T Intellectual Property.
+#
+set -e
+
+usage() {
+	cat <<-EOF
+		Usage: $0 DISK_IMAGE
+
+		Mount DISK_IMAGE and scan it, optionally decompressing first.
+
+		DISK_IMAGE must be a qcow or raw disk image.
+
+		GZip-compressed images will be decompressed in-place.
+
+		Environment variable IMAGESCANNER_MOUNTPOINT controls where the image
+		will be mounted while scan is in progress.
+	EOF
+}
+
+scan_image_dir() {
+	clamscan -r "$1"
+	return $?
+}
+
+image="$1"
+[ "$IMAGESCANNER_MOUNTPOINT" ] || export IMAGESCANNER_MOUNTPOINT="/mnt/imagescanner"
+[ -d "$IMAGESCANNER_MOUNTPOINT" ] || mkdir -p "$IMAGESCANNER_MOUNTPOINT"
+
+[ -e "$image" ] || {
+	echo "Error: image not found: $image"
+	exit 1
+}
+
+if [ "${image##*.}" = "gz" ]; then
+	echo "Decompressing image $image..."
+	gunzip "$image"
+	image="${image%.gz}"
+fi
+
+# Hueristic for determining image type:
+# 1. ask "file"
+# 2. failing that, check file extension
+echo "Detecting image type for $image..."
+detectedtype="$(file -b $image)"
+case "$detectedtype" in
+	"QEMU QCOW Image"*)	        imagetype=qcow ;;
+	"ISO 9660 CD-ROM"*) 		imagetype=iso	;;
+	"DOS/MBR boot sector"*)		imagetype=img	;; # "isohybrid" bootable CD / disk image
+	*) echo "Could not detect image type by inspection; guessing by extension..."
+		# unknown string from 'file'; try by extension
+		case "${image##*.}" in
+			"qcow"|"qcow2")		imagetype=qcow	;;
+			"iso")				imagetype=iso	;;
+			"img")				imagetype=img	;;
+			*)
+				echo "Error: $image has unknown image type: $detectedtype"
+				exit 3
+				;;
+		esac
+		;;
+esac
+echo "Detected $detectedtype: $imagetype"
+
+status=0
+case "$imagetype" in
+	qcow)
+		echo "Processing qcow image $image..."
+		qemu-nbd -rc /dev/nbd0 "$image"
+		partitions=$(kpartx -ravs /dev/nbd0 | cut -d' ' -f3)
+		for partition in $partitions
+		do
+			[ -e "/dev/mapper/$partition" ] || continue # nullglob
+			echo "Mounting qcow partition $image/$partition..."
+			mount -o ro "/dev/mapper/$partition" "$IMAGESCANNER_MOUNTPOINT"
+			echo "Scanning mounted image..."
+			scan_image_dir "$IMAGESCANNER_MOUNTPOINT" || status=$?
+			echo "Unmounting..."
+			umount "$IMAGESCANNER_MOUNTPOINT"
+		done
+		echo "Disconnecting NBD device..."
+		dmsetup remove $partitions
+		kpartx -vd /dev/nbd0
+		qemu-nbd -d /dev/nbd0
+		;;
+
+	img)
+		echo "Processing raw image $image..."
+		partitions=$(kpartx -ravs $image | cut -d' ' -f3)
+		for partition in $partitions
+		do
+			[ -e "/dev/mapper/$partition" ] || continue # nullglob
+			echo "Mounting raw image partition $image/$partition..."
+			mount -o ro "/dev/mapper/$partition" "$IMAGESCANNER_MOUNTPOINT"
+			echo "Scanning mounted image..."
+			scan_image_dir "$IMAGESCANNER_MOUNTPOINT"  || status=$?
+			echo "Unmounting..."
+			umount "$IMAGESCANNER_MOUNTPOINT"
+		done
+		echo "Disconnecting loopback device..."
+		# this is unnecessary on my host; why is it needed in a container?
+		dmsetup remove $partitions
+		kpartx -vd $image
+		;;
+
+	iso)
+		echo "Processing iso image $image..."
+		mount -o loop,ro "$image" "$IMAGESCANNER_MOUNTPOINT"
+		echo "Scanning mounted image..."
+		scan_image_dir "$IMAGESCANNER_MOUNTPOINT"  || status=$?
+		echo "Unmounting..."
+		umount "$IMAGESCANNER_MOUNTPOINT"
+		;;
+
+esac
+echo "Done scanning $image."
+
+if [ "$status" != "0" ]; then
+	echo "WARNING: A scan reported a failure result."
+	exit $status
+fi

@@ -1,0 +1,118 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.onap.oparent</groupId>
+    <artifactId>oparent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <groupId>org.openecomp.vvp</groupId>
+  <artifactId>vvp-image-scanner</artifactId>
+  <packaging>pom</packaging>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>vvp-image-scanner</name>
+
+  <properties>
+        <!--nexus-->
+        <sitePath>/content/sites/site/org/openecomp/vvp/${project.artifactId}/${project.version}</sitePath>
+        <!--maven-->
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <maven.build.timestamp.format>yyyy.MM.dd.HH.mm</maven.build.timestamp.format>
+        <!--docker-->
+        <docker.tag>${project.version}-${timestamp}</docker.tag>
+        <docker.latest.tag>${project.version}-latest</docker.latest.tag>
+  </properties>
+
+  <build>
+    <plugins>
+        <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.7</version>
+            <extensions>true</extensions>
+            <configuration>
+                <nexusUrl>${onap.nexus.url}</nexusUrl>
+                <stagingProfileId>176c31dfe190a</stagingProfileId>
+                <serverId>ecomp-staging</serverId>
+            </configuration>
+        </plugin>
+        <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>0.15.1</version>
+            <configuration>
+                <images>
+                    <image>
+                        <name>openecomp/vvp-image-scanner</name>
+                        <alias>vvp-image-scanner</alias>
+                        <build>
+                            <cleanup>true</cleanup>
+                            <tags>
+                                <tag>${docker.tag}</tag>
+                                <tag>${docker.latest.tag}</tag>
+                            </tags>
+                            <dockerFileDir>${project.basedir}</dockerFileDir>
+                        </build>
+                    </image>
+                </images>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>clean-images</id>
+                    <phase>pre-clean</phase>
+                    <goals>
+                        <goal>remove</goal>
+                    </goals>
+                    <configuration>
+                        <removeAll>true</removeAll>
+                    </configuration>
+                </execution>
+
+                <execution>
+                    <id>generate-images</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>build</goal>
+                    </goals>
+                </execution>
+
+                <execution>
+                    <id>push-images</id>
+                    <phase>deploy</phase>
+                    <goals>
+                        <goal>build</goal>
+                        <goal>push</goal>
+                    </goals>
+                    <configuration>
+                        <image>openecomp/vvp-image-scanner</image>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+  </build>
+  <distributionManagement>
+      <site>
+          <id>ecomp-site</id>
+          <url>dav:${onap.nexus.url}${sitePath}</url>
+      </site>
+  </distributionManagement>
+  <repositories>
+    <repository>
+        <id>ecomp-releases</id>
+          <name>ECOMP Release Repository</name>
+          <url>${onap.nexus.url}/content/repositories/releases/</url>
+    </repository>
+    <repository>
+          <id>ecomp-snapshots</id>
+          <name>ECOMP Snapshot Repository</name>
+          <url>${onap.nexus.url}/content/repositories/snapshots/</url>
+    </repository>
+    <repository>
+        <id>ecomp-staging</id>
+        <name>ECOMP Staging Repository</name>
+        <url>${onap.nexus.url}/content/repositories/staging/</url>
+    </repository>
+  </repositories>
+</project>

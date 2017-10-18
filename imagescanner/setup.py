@@ -44,5 +44,12 @@ setup(
     include_package_data=True,
     package_data={
         'imagescanner': ['templates/*'],
-        }
-    )
+        },
+    install_requires=[
+        'celery[redis]',
+        'flask',
+        'python-jenkins',
+        'requests',
+        'requests-aws',
+        ],
+    ),

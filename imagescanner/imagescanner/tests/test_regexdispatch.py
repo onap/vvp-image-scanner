@@ -36,36 +36,26 @@
 #
 # ECOMP is a trademark and service mark of AT&T Intellectual Property.
 #
-FROM alpine
+from ..regexdispatch import regexdispatch
 
-RUN apk add --no-cache \
-    clamav \
-    clamav-libunrar \
-    device-mapper \
-    file \
-    git \
-    multipath-tools \
-    openssh-client \
-    qemu \
-    rsyslog \
-    uwsgi-python3 \
-    wget \
-    ; :
 
-# Bootstrap the database since clamav is running for the first time
-RUN freshclam -v
+@regexdispatch
+def dispatch_fixture(bar, baz=None):
+    '''A function that will dispatch among a list of functions.'''
+    return "other"
 
-ENV IMAGESCANNER_LOGS_PATH=/var/log/imagescanner \
-    IMAGESCANNER_MOUNTPOINT=/mnt/imagescanner
 
-COPY imagescanner /opt/imagescanner
-COPY bin/* /usr/local/bin/
-RUN mkdir -p $IMAGESCANNER_MOUNTPOINT /run/clamav $IMAGESCANNER_LOGS_PATH; chown clamav /run/clamav
-RUN pip3 install \
-    /opt/imagescanner \
-    celery[redis] \
-    flask \
-    requests \
-    requests-aws \
-    ; :
-EXPOSE 80
+@dispatch_fixture.register(r'[a-z]')
+def _letters_handler(bar, baz=None):
+    return "letters"
+
+
+@dispatch_fixture.register(r'[0-9]')
+def _numbers_handler(bar, baz=None):
+    return "numbers"
+
+
+def test_basic_dispatch():
+    assert dispatch_fixture("abc") == "letters"
+    assert dispatch_fixture("123") == "numbers"
+    assert dispatch_fixture("---") == "other"

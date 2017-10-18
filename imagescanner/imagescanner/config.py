@@ -36,36 +36,31 @@
 #
 # ECOMP is a trademark and service mark of AT&T Intellectual Property.
 #
-FROM alpine
+"""
+To configure imagescanner for your environment, create a module named
+imagescannerconfig containing overrides for the boilerplate settings listed
+here and arrange for it to be accessible from your PYTHONPATH.
 
-RUN apk add --no-cache \
-    clamav \
-    clamav-libunrar \
-    device-mapper \
-    file \
-    git \
-    multipath-tools \
-    openssh-client \
-    qemu \
-    rsyslog \
-    uwsgi-python3 \
-    wget \
-    ; :
+"""
+import os
+from pathlib import Path
 
-# Bootstrap the database since clamav is running for the first time
-RUN freshclam -v
+# A mapping from host names to Requests Authentication Objects; see
+# http://docs.python-requests.org/en/master/user/authentication/
+AUTHS = {}
+LOGS_PATH = Path(os.getenv('IMAGESCANNER_LOGS_PATH', '.'))
+STATUSFILE = LOGS_PATH/'status.txt'
+# A dict passed as kwargs to jenkins.Jenkins constructor.
+JENKINS = {
+    'url': 'http://jenkins:8080',
+    'username': '',
+    'password': '',
+    }
 
-ENV IMAGESCANNER_LOGS_PATH=/var/log/imagescanner \
-    IMAGESCANNER_MOUNTPOINT=/mnt/imagescanner
-
-COPY imagescanner /opt/imagescanner
-COPY bin/* /usr/local/bin/
-RUN mkdir -p $IMAGESCANNER_MOUNTPOINT /run/clamav $IMAGESCANNER_LOGS_PATH; chown clamav /run/clamav
-RUN pip3 install \
-    /opt/imagescanner \
-    celery[redis] \
-    flask \
-    requests \
-    requests-aws \
-    ; :
-EXPOSE 80
+try:
+    from imagescannerconfig import * # noqa
+except ImportError:
+    import warnings
+    warnings.warn(
+        "Could not import imagescannerconfig; default settings are"
+        " probably not what you want.")

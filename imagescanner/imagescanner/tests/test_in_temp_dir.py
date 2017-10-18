@@ -36,36 +36,25 @@
 #
 # ECOMP is a trademark and service mark of AT&T Intellectual Property.
 #
-FROM alpine
+import os
+from ..in_temp_dir import in_temp_dir
 
-RUN apk add --no-cache \
-    clamav \
-    clamav-libunrar \
-    device-mapper \
-    file \
-    git \
-    multipath-tools \
-    openssh-client \
-    qemu \
-    rsyslog \
-    uwsgi-python3 \
-    wget \
-    ; :
 
-# Bootstrap the database since clamav is running for the first time
-RUN freshclam -v
+def test_in_temp_dir():
+    with in_temp_dir() as workspace:
+        with open("temporary.txt", "w") as junkfile:
+            junkfile.write('')
+            assert os.path.exists(os.path.join(workspace, junkfile.name))
+    assert not os.path.exists(os.path.join(workspace, junkfile.name))
 
-ENV IMAGESCANNER_LOGS_PATH=/var/log/imagescanner \
-    IMAGESCANNER_MOUNTPOINT=/mnt/imagescanner
 
-COPY imagescanner /opt/imagescanner
-COPY bin/* /usr/local/bin/
-RUN mkdir -p $IMAGESCANNER_MOUNTPOINT /run/clamav $IMAGESCANNER_LOGS_PATH; chown clamav /run/clamav
-RUN pip3 install \
-    /opt/imagescanner \
-    celery[redis] \
-    flask \
-    requests \
-    requests-aws \
-    ; :
-EXPOSE 80
+@in_temp_dir()
+def make_some_junk():
+    with open("temporary.txt", "w") as junkfile:
+        junkfile.write('')
+    return os.path.join(os.getcwd(), junkfile.name)
+
+
+def test_method_in_temp_dir():
+    junkfile = make_some_junk()
+    assert not os.path.exists(junkfile)

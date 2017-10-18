@@ -42,7 +42,7 @@ from flask import (
     Flask, request, redirect, send_from_directory, url_for, render_template,
     )
 import re
-from . import STATUSFILE, LOGS_PATH
+from . import config
 from .tasks import celery_app, request_scan
 
 app = Flask(__name__)
@@ -55,7 +55,7 @@ celery_inspect = celery_app.control.inspect()
 def show_form():
     # TODO: consider storing worker status/state directly in redis
     try:
-        with STATUSFILE.open() as fp:
+        with config.STATUSFILE.open() as fp:
             status = fp.read()
     except FileNotFoundError:
         status = '(No status information available)'
@@ -64,10 +64,12 @@ def show_form():
         'form.html',
         channel=os.getenv('DEFAULT_SLACK_CHANNEL', ''),
         status=status,
-        active=(job
+        active=(
+            job
             for worker, jobs in (celery_inspect.active() or {}).items()
             for job in jobs),
-        reserved=(job
+        reserved=(
+            job
             for worker, jobs in (celery_inspect.reserved() or {}).items()
             for job in jobs),
         )
@@ -89,6 +91,6 @@ def show_result_log(hashval):
     if '/' in hashval:
         raise ValueError("Invalid character in hashval")
     return send_from_directory(
-        LOGS_PATH,
+        config.LOGS_PATH,
         "SecurityValidation-%s.txt" % hashval,
         )

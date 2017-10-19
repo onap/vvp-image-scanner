@@ -7,8 +7,8 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.openecomp.vvp.image_scanner</groupId>
-  <artifactId>image_scanner</artifactId>
+  <groupId>org.openecomp.vvp.image-scanner</groupId>
+  <artifactId>image-scanner</artifactId>
   <packaging>pom</packaging>
   <version>1.0.0-SNAPSHOT</version>
   <name>vvp-image-scanner</name>
@@ -44,7 +44,7 @@
             <configuration>
                 <images>
                     <image>
-                        <name>openecomp/vvp/image_scanner</name>
+                        <name>openecomp/vvp-image-scanner</name>
                         <alias>vvp-image-scanner</alias>
                         <build>
                             <cleanup>true</cleanup>
@@ -85,7 +85,7 @@
                         <goal>push</goal>
                     </goals>
                     <configuration>
-                        <image>openecomp/vvp/image_scanner</image>
+                        <image>openecomp/vvp-image-scanner</image>
                     </configuration>
                 </execution>
             </executions>

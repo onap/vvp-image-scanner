@@ -15,6 +15,7 @@
 
   <properties>
         <!--nexus-->
+        <onap.nexus.url>https://nexus.onap.org</onap.nexus.url>
         <sitePath>/content/sites/site/org/openecomp/vvp/${project.artifactId}/${project.version}</sitePath>
         <!--maven-->
         <timestamp>${maven.build.timestamp}</timestamp>

@@ -23,6 +23,8 @@
         <!--docker-->
         <docker.tag>${project.version}-${timestamp}</docker.tag>
         <docker.latest.tag>${project.version}-latest</docker.latest.tag>
+        <docker.pull.registry>nexus3.onap.org:10001</docker.pull.registry>
+        <docker.push.registry>nexus3.onap.org:10003</docker.push.registry>
   </properties>
 
   <build>
@@ -43,6 +45,8 @@
             <artifactId>docker-maven-plugin</artifactId>
             <version>0.19.0</version>
             <configuration>
+                <pullRegistry>${docker.pull.registry}</pullRegistry>
+                <pushRegistry>${docker.push.registry}</pushRegistry>
                 <images>
                     <image>
                         <name>onap/vvp/image-scanner</name>

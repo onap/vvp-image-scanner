@@ -25,6 +25,13 @@
         <docker.latest.tag>${project.version}-latest</docker.latest.tag>
         <docker.pull.registry>nexus3.onap.org:10001</docker.pull.registry>
         <docker.push.registry>nexus3.onap.org:10003</docker.push.registry>
+        <!--sonar-->
+        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
+        <sonar.sources>.</sonar.sources>
+        <sonar.python.coverage.reportPath>coverage.xml</sonar.python.coverage.reportPath>
+        <sonar.language>py</sonar.language>
+        <sonar.pluginName>python</sonar.pluginName>
+        <sonar.inclusions>imagescanner/imagescanner/**.py</sonar.inclusions>
   </properties>
 
   <build>

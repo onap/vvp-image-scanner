@@ -35,6 +35,18 @@
   </properties>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <configuration>
+              <executable>${session.executionRootDirectory}/mvn-phase-script.sh</executable>
+            </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
         <plugin>
             <groupId>org.sonatype.plugins</groupId>
@@ -101,6 +113,24 @@
                     </configuration>
                 </execution>
             </executions>
+        </plugin>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <execution>
+              <id>test script</id>
+              <phase>test</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <arguments>
+                  <argument>__</argument>
+                  <argument>test</argument>
+                </arguments>
+              </configuration>
+            </execution>
         </plugin>
     </plugins>
   </build>

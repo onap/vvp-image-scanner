@@ -115,9 +115,10 @@
             </executions>
         </plugin>
         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.2.1</version>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.2.1</version>
+          <executions>
             <execution>
               <id>test script</id>
               <phase>test</phase>
@@ -131,6 +132,7 @@
                 </arguments>
               </configuration>
             </execution>
+          </executions>
         </plugin>
     </plugins>
   </build>

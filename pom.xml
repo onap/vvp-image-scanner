@@ -10,7 +10,7 @@
   <groupId>org.onap.vvp.image-scanner</groupId>
   <artifactId>image-scanner</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <name>vvp-image-scanner</name>
 
   <properties>

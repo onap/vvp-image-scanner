@@ -1,4 +1,4 @@
-celery[redis]
-flask
-requests
-requests-aws
+celery[redis]==4.2.1
+flask==1.0.2
+requests==2.20.0
+requests-aws==0.1.8

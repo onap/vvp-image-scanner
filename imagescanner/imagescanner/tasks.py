@@ -50,8 +50,8 @@ from .in_temp_dir import in_temp_dir
 from .regexdispatch import regexdispatch
 
 celery_app = Celery(
-    broker='redis://redis',
-    backend='redis://redis',
+    broker='redis://vvp-redis',
+    backend='redis://vvp-redis',
     )
 
 # direct_re will match URLs pointing directly to an image to download, over
